@@ -5,9 +5,13 @@ import openmeteo_requests
 import requests_cache
 
 # --- Config ---
-BROKER = "broker.hivemq.com"
+BROKER = "localhost"          # <-- changé : broker privé local
 PORT = 1883
-SEND_INTERVAL = 15  # secondes (modifiable)
+SEND_INTERVAL = 15
+
+# --- Authentification broker privé ---
+MQTT_USERNAME = "simulateur"
+MQTT_PASSWORD = "simu123"
 
 cache_session = requests_cache.CachedSession('.cache', expire_after=3600)
 openmeteo = openmeteo_requests.Client(session=cache_session)
@@ -51,11 +55,11 @@ def fetch_real_weather_data(lat, lon):
         return None
 
 
-# MQTT
-# Correction 1 : Spécifier la version de l'API pour supprimer le premier avertissement
+# MQTT — avec authentification
 client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
 client.connect(BROKER, PORT, 60)
-client.loop_start()          # stabilité
+client.loop_start()
 
 while True:
     # Correction 2 : Utiliser la méthode recommandée pour obtenir l'heure UTC
