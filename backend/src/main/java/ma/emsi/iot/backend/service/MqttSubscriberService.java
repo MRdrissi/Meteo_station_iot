@@ -1,8 +1,9 @@
 package ma.emsi.iot.backend.service;
 
-import ch.qos.logback.core.net.SyslogOutputStream;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import ma.emsi.iot.backend.dto.WeatherPayload;
 import org.eclipse.paho.client.mqttv3.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,6 +25,7 @@ public class MqttSubscriberService {
     private final WeatherValidationService validationService;
     private final MockStorageService mockStorageService;
 
+    private MqttClient client;
     public MqttSubscriberService(WeatherValidationService validationService, MockStorageService mockStorageService) {
         this.validationService = validationService;
         this.mockStorageService = mockStorageService;
@@ -33,7 +35,7 @@ public class MqttSubscriberService {
     public void connect() {
         try {
             // 1. Initialisation du client
-            MqttClient client = new MqttClient(brokerUrl, clientId);
+            client = new MqttClient(brokerUrl, clientId);
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
@@ -71,7 +73,7 @@ public class MqttSubscriberService {
                         System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
                         System.out.println("Pression : " + weatherData.getSensors().getPressure_hpa() + " hpa");
                         System.out.println("Luminosité : " + weatherData.getSensors().getLuminosity_lux() + " //");
-                        System.out.println("Humidité : " + weatherData.getSensors().getHumidity_pct() + " km/h");
+                        System.out.println("Humidité : " + weatherData.getSensors().getHumidity_pct() + " %");
 
                     } else {
                         // On ne fait RIEN, la donnée mauvaise est détruite.
@@ -86,6 +88,19 @@ public class MqttSubscriberService {
 
         } catch (MqttException e) {
             System.err.println("Erreur MQTT : " + e.getMessage());
+        }
+    }
+
+    @PreDestroy
+    public void disconnect() {
+        try {
+            if (client != null && client.isConnected()) {
+                client.disconnect(); // On se déconnecte du Broker
+                client.close();      // On libère les ressources Paho MQTT
+                System.out.println("Déconnexion MQTT propre réussie lors de l'arrêt du serveur.");
+            }
+        } catch (MqttException e) {
+            System.err.println(" Erreur lors de la déconnexion MQTT : " + e.getMessage());
         }
     }
 }
