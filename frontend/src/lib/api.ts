@@ -1,4 +1,6 @@
-const API_BASE = "http://localhost:8080/api";
+const API_BASE = typeof window !== "undefined"
+    ? `http://${window.location.hostname}:8080/api`
+    : "http://localhost:8080/api";
 
 function getToken(): string | null {
     if (typeof window === "undefined") return null;
