@@ -3,10 +3,12 @@ package ma.emsi.iot.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import ma.emsi.iot.backend.dto.WeatherPayload;
+import ma.emsi.iot.backend.repository.StationRepository;
 import org.eclipse.paho.client.mqttv3.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 
 @Service
 public class MqttSubscriberService {
@@ -20,44 +22,65 @@ public class MqttSubscriberService {
     @Value("${mqtt.topic}")
     private String topic;
 
+    @Value("${mqtt.username}")
+    private String username;
+
+    @Value("${mqtt.password}")
+    private String password;
+
+    private final InfluxDBService influxDBService;
+    private final StationRepository stationRepository;
+
+    public MqttSubscriberService(InfluxDBService influxDBService,
+                                 StationRepository stationRepository) {
+        this.influxDBService = influxDBService;
+        this.stationRepository = stationRepository;
+    }
+
     @PostConstruct
     public void connect() {
         try {
-            // 1. Initialisation du client
             MqttClient client = new MqttClient(brokerUrl, clientId);
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
 
-            // 2. Connexion
+            // ─── Authentification broker privé ───
+            options.setUserName(username);
+            options.setPassword(password.toCharArray());
+
             client.connect(options);
-            System.out.println("BACKEND CONNECTÉ AU BROKER : " + brokerUrl);
+            System.out.println("BACKEND CONNECTÉ AU BROKER PRIVÉ : " + brokerUrl);
 
-            // 3. Abonnement et écoute en temps réel
-            /*client.subscribe(topic, (topicReçu, message) -> {
-                String payload = new String(message.getPayload());
-                System.out.println("-------------------------------------------------");
-                System.out.println("NOUVEAU MESSAGE SUR LE TOPIC : " + topicReçu);
-                System.out.println("JSON BRUT : " + payload);
-            });*/
-
-            // 3. Abonnement et écoute en temps réel
-            ObjectMapper mapper = new ObjectMapper(); // Le traducteur JSON -> Java
+            ObjectMapper mapper = new ObjectMapper();
 
             client.subscribe(topic, (topicReçu, message) -> {
                 String payload = new String(message.getPayload());
 
                 try {
-                    // Désérialisation  ici !
                     WeatherPayload weatherData = mapper.readValue(payload, WeatherPayload.class);
+                    String stationId = weatherData.getMetadata().getStation_id();
 
-                    System.out.println("-------------------------------------------------");
-                    System.out.println("Station : " + weatherData.getMetadata().getStation_id());
-                    System.out.println("Température extraite : " + weatherData.getSensors().getTemperature_c() + " °C");
-                    System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
+                    // 1. Écrire dans InfluxDB (données temps réel)
+                    influxDBService.saveWeatherData(weatherData);
+
+                    // 2. Mettre à jour lastSeenAt dans PostgreSQL
+                    stationRepository.findByStationId(stationId).ifPresent(station -> {
+                        station.setLastSeenAt(LocalDateTime.now());
+                        stationRepository.save(station);
+                    });
+
+                    System.out.println("──────────────────────────────────────────────");
+                    System.out.println("Station : " + stationId);
+                    System.out.println("Température : " + weatherData.getSensors().getTemperature_c() + " °C");
+                    System.out.println("Humidité : " + weatherData.getSensors().getHumidity_pct() + " %");
+                    System.out.println("Pression : " + weatherData.getSensors().getPressure_hpa() + " hPa");
+                    System.out.println("Vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
+                    System.out.println("Luminosité : " + weatherData.getSensors().getLuminosity_lux() + " lux");
+                    System.out.println("Sauvegardé dans InfluxDB / PostgreSQL");
 
                 } catch (Exception e) {
-                    System.err.println("❌ Erreur de lecture du JSON : " + e.getMessage());
+                    System.err.println("❌ Erreur traitement : " + e.getMessage());
                 }
             });
 
