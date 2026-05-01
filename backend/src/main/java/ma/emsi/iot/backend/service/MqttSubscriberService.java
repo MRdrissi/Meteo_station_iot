@@ -24,11 +24,13 @@ public class MqttSubscriberService {
 
     private final WeatherValidationService validationService;
     private final MockStorageService mockStorageService;
-
+    private final AlertEngineService alertEngineService;
     private MqttClient client;
-    public MqttSubscriberService(WeatherValidationService validationService, MockStorageService mockStorageService) {
+
+    public MqttSubscriberService(WeatherValidationService validationService, MockStorageService mockStorageService, AlertEngineService alertEngineService) {
         this.validationService = validationService;
         this.mockStorageService = mockStorageService;
+        this.alertEngineService = alertEngineService;
     }
 
     @PostConstruct
@@ -74,6 +76,9 @@ public class MqttSubscriberService {
                         System.out.println("Pression : " + weatherData.getSensors().getPressure_hpa() + " hpa");
                         System.out.println("Luminosité : " + weatherData.getSensors().getLuminosity_lux() + " //");
                         System.out.println("Humidité : " + weatherData.getSensors().getHumidity_pct() + " %");
+
+                        alertEngineService.analyser(weatherData);
+
 
                     } else {
                         // On ne fait RIEN, la donnée mauvaise est détruite.

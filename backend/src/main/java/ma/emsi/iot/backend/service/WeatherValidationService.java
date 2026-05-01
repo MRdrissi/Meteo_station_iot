@@ -11,9 +11,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-@Data
-@AllArgsConstructor
-
 public class WeatherValidationService {
 
     final Map<String, EtatPrecedent> memoireStations = new ConcurrentHashMap<>();
