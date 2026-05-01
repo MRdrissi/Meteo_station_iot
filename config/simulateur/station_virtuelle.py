@@ -78,7 +78,7 @@ while True:
                 },
                 "system": {"battery_pct": 99}
             }
-            topic = f"emsi/pfa/marwane_mouad/weather/{station_id}/data"
+            topic = f"emsi/pfa/marwane_mouad/weather/ST-CASABLANCA/data"
             client.publish(topic, json.dumps(payload))
             print(f"[{station_id}] -> {payload['sensors']}")
     time.sleep(SEND_INTERVAL)

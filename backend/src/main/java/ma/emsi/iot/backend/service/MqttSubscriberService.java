@@ -1,5 +1,6 @@
 package ma.emsi.iot.backend.service;
 
+import ch.qos.logback.core.net.SyslogOutputStream;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import ma.emsi.iot.backend.dto.WeatherPayload;
@@ -19,6 +20,14 @@ public class MqttSubscriberService {
 
     @Value("${mqtt.topic}")
     private String topic;
+
+    private final WeatherValidationService validationService;
+    private final MockStorageService mockStorageService;
+
+    public MqttSubscriberService(WeatherValidationService validationService, MockStorageService mockStorageService) {
+        this.validationService = validationService;
+        this.mockStorageService = mockStorageService;
+    }
 
     @PostConstruct
     public void connect() {
@@ -45,19 +54,33 @@ public class MqttSubscriberService {
             ObjectMapper mapper = new ObjectMapper(); // Le traducteur JSON -> Java
 
             client.subscribe(topic, (topicReçu, message) -> {
-                String payload = new String(message.getPayload());
+
 
                 try {
                     // Désérialisation  ici !
+                    String payload = new String(message.getPayload());
                     WeatherPayload weatherData = mapper.readValue(payload, WeatherPayload.class);
 
                     System.out.println("-------------------------------------------------");
-                    System.out.println("Station : " + weatherData.getMetadata().getStation_id());
-                    System.out.println("Température extraite : " + weatherData.getSensors().getTemperature_c() + " °C");
-                    System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
+
+                    if (validationService.isPayloadValid(weatherData)) {
+                        System.out.println("🟢 [" + weatherData.getMetadata().getStation_id() + "] Validation réussie.");
+                        mockStorageService.sauvegarder(weatherData); // On envoie en base
+                        System.out.println("Station : " + weatherData.getMetadata().getStation_id());
+                        System.out.println("Température extraite : " + weatherData.getSensors().getTemperature_c() + " °C");
+                        System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
+                        System.out.println("Pression : " + weatherData.getSensors().getPressure_hpa() + " hpa");
+                        System.out.println("Luminosité : " + weatherData.getSensors().getLuminosity_lux() + " //");
+                        System.out.println("Humidité : " + weatherData.getSensors().getHumidity_pct() + " km/h");
+
+                    } else {
+                        // On ne fait RIEN, la donnée mauvaise est détruite.
+                        System.out.println("🔴 Donnée ignorée.");
+                    }
+
 
                 } catch (Exception e) {
-                    System.err.println("❌ Erreur de lecture du JSON : " + e.getMessage());
+                    System.err.println(" Erreur de lecture du JSON : " + e.getMessage());
                 }
             });
 
