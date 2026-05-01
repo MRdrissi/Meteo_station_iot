@@ -1,10 +1,59 @@
 version: '3.8'
 
 services:
+
+  # ══════════════════════════════════════
+  # BROKER MQTT PRIVÉ
+  # ══════════════════════════════════════
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: mon_broker_mqtt
     ports:
       - "1883:1883"
     volumes:
-      - ./config:/mosquitto/config
+      - ./config/mosquitto.conf:/mosquitto/config/mosquitto.conf
+      - ./config/mosquitto_passwd:/mosquitto/config/mosquitto_passwd
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    restart: unless-stopped
+
+  # ══════════════════════════════════════
+  # POSTGRESQL — données statiques
+  # ══════════════════════════════════════
+  postgres:
+    image: postgres:16-alpine
+    container_name: meteo_postgres
+    environment:
+      POSTGRES_DB: meteo_db
+      POSTGRES_USER: meteo_user
+      POSTGRES_PASSWORD: meteo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ══════════════════════════════════════
+  # INFLUXDB — données temps réel
+  # ══════════════════════════════════════
+  influxdb:
+    image: influxdb:2.7
+    container_name: meteo_influxdb
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: influx_pass
+      DOCKER_INFLUXDB_INIT_ORG: emsi-iot
+      DOCKER_INFLUXDB_INIT_BUCKET: weather_data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: token-secret-influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+    restart: unless-stopped
+
+volumes:
+  mosquitto_data:
+  mosquitto_log:
+  postgres_data:
+  influxdb_data:
