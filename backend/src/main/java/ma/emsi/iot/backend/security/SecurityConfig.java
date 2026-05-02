@@ -34,9 +34,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
 
                         // ══════════════════════════════════════
-                        // ENDPOINTS PUBLICS (pas besoin de token)
-                        // ══════════════════════════════════════
-                        .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        .requestMatchers("/api/auth/me").authenticated()
 
                         // ══════════════════════════════════════
                         // LECTURE → USER et ADMIN
