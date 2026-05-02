@@ -198,7 +198,11 @@ export default function StationsListPage() {
                     <div className="flex gap-2 mt-4">
                         <button
                             onClick={handleAddStation}
-                            disabled={saving || !newStation.stationId || !newStation.city}
+                            disabled={saving
+                                || !newStation.stationId
+                                || !newStation.city
+                                || newStation.latitude === 0
+                                || newStation.longitude === 0}
                             className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium
                          hover:bg-brand-700 transition disabled:opacity-60 cursor-pointer"
                         >
@@ -342,7 +346,7 @@ export default function StationsListPage() {
                                         {isAdmin && (
                                             <>
                                                 <Link
-                                                    href={`/stations/${s.id}`}
+                                                    href={`/stations/${s.id}?edit=true`}
                                                     className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50
                                        rounded-lg transition"
                                                 >

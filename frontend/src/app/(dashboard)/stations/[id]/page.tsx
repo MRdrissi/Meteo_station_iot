@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import {useParams, useRouter, useSearchParams} from "next/navigation";
 import { stations as stationsApi, weather } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/Toast";
@@ -18,6 +18,7 @@ import {
 export default function StationDetailPage() {
     const { id } = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { user } = useAuth();
     const isAdmin = user?.role === "ADMIN";
 
@@ -41,6 +42,11 @@ export default function StationDetailPage() {
                     longitude: s.longitude,
                     status: s.status,
                 });
+
+                if (searchParams.get("edit") === "true") {
+                    setEditing(true);
+                }
+
                 const w = await weather.getByStation(s.stationId, "6h");
                 setWeatherData(w);
             } catch (err) {
@@ -50,7 +56,7 @@ export default function StationDetailPage() {
             }
         };
         load();
-    }, [id]);
+    }, [id, searchParams]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -70,7 +76,7 @@ export default function StationDetailPage() {
         if (!confirm("Supprimer cette station ?")) return;
         try {
             await stationsApi.delete(Number(id));
-            router.push("/");
+            router.push("/stations");
         } catch (err: any) {
             toast.error(err.message);
         }

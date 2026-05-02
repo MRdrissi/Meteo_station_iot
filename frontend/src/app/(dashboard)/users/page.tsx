@@ -13,6 +13,7 @@ import {
     UserX,
     Search,
     Pencil,
+    Trash2,
 } from "lucide-react";
 
 export default function UsersPage() {
@@ -26,6 +27,8 @@ export default function UsersPage() {
     const [saving, setSaving] = useState(false);
 
     const toast = useToast();
+
+    const isAdmin = currentUser?.role === "ADMIN";
 
     // Rediriger si pas ADMIN
     useEffect(() => {
@@ -63,6 +66,17 @@ export default function UsersPage() {
         }
     };
 
+    const handleDeleteUser = async (id: number, username: string) => {
+        if (!confirm(`Supprimer l'utilisateur ${username} ?`)) return;
+        try {
+            await usersApi.delete(id);
+            setUsersList(usersList.filter((u) => u.id !== id));
+            toast.success(`Utilisateur ${username} supprimé`);
+        } catch (err: any) {
+            toast.error(err.message);
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -78,14 +92,16 @@ export default function UsersPage() {
                     <h1 className="text-2xl font-bold text-gray-900">Utilisateurs</h1>
                     <p className="text-gray-500 mt-1">Gérez les comptes et les rôles</p>
                 </div>
-                <button
-                    onClick={() => setShowAdd(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white
+                {isAdmin && (
+                    <button
+                        onClick={() => setShowAdd(true)}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white
                      rounded-lg hover:bg-brand-700 transition text-sm font-medium cursor-pointer"
-                >
-                    <Plus className="w-4 h-4" />
-                    Nouvel utilisateur
-                </button>
+                    >
+                        <Plus className="w-4 h-4" />
+                        Nouvel utilisateur
+                    </button>
+                )}
             </div>
 
             {/* Barre de recherche */}
@@ -180,7 +196,7 @@ export default function UsersPage() {
                             <td className="px-6 py-4">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-brand-100 rounded-full flex items-center
-                                    justify-center text-brand-700 font-semibold text-xs">
+                                     justify-center text-brand-700 font-semibold text-xs">
                                         {u.username.charAt(0).toUpperCase()}
                                     </div>
                                     <span className="font-medium text-gray-900">{u.username}</span>
@@ -210,12 +226,20 @@ export default function UsersPage() {
                                 )}
                             </td>
                             <td className="px-6 py-4">
-                                <Link
-                                    href={`/users/${u.id}`}
-                                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition inline-flex"
-                                >
-                                    <Pencil className="w-4 h-4" />
-                                </Link>
+                                <div className="flex items-center gap-2">
+                                    <Link
+                                        href={`/users/${u.id}`}
+                                        className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition inline-flex"
+                                    >
+                                        <Pencil className="w-4 h-4" />
+                                    </Link>
+                                    <button
+                                        onClick={() => handleDeleteUser(u.id, u.username)}
+                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition inline-flex cursor-pointer"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}

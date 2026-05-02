@@ -1,5 +1,7 @@
 package ma.emsi.iot.backend.service;
 
+import ma.emsi.iot.backend.dto.CreateUserRequest;
+import ma.emsi.iot.backend.dto.UpdateUserRequest;
 import ma.emsi.iot.backend.entity.User;
 import ma.emsi.iot.backend.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -31,26 +33,34 @@ public class UserService {
 
     // ─── Écriture (ADMIN) ───
 
-    public User createUser(User user) {
-        if (userRepository.existsByUsername(user.getUsername())) {
-            throw new IllegalArgumentException("Ce nom d'utilisateur existe déjà");
-        }
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new IllegalArgumentException("Cet email est déjà utilisé");
-        }
-        // Hasher le mot de passe
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
+    public User createUser(CreateUserRequest req) {
+        if (userRepository.existsByUsername(req.getUsername()))
+            throw new IllegalArgumentException("Nom d'utilisateur déjà pris");
+        if (userRepository.existsByEmail(req.getEmail()))
+            throw new IllegalArgumentException("Email déjà utilisé");
+
+        User user = new User();
+        user.setUsername(req.getUsername());
+        user.setEmail(req.getEmail());
+        user.setPassword(passwordEncoder.encode(req.getPassword()));  // ✅ plus jamais null
+        user.setRole(User.Role.valueOf(req.getRole() != null ? req.getRole() : "USER"));
         return userRepository.save(user);
     }
 
-    public User updateUser(Long id, User updated) {
+    public User updateUser(Long id, UpdateUserRequest req) {
         User user = getUserById(id);
-        user.setEmail(updated.getEmail());
-        user.setRole(updated.getRole());
-        user.setEnabled(updated.isEnabled());
-        // Si un nouveau mot de passe est fourni, le hasher
-        if (updated.getPassword() != null && !updated.getPassword().isBlank()) {
-            user.setPassword(passwordEncoder.encode(updated.getPassword()));
+
+        // Vérifier que le nouvel email n'appartient pas à un AUTRE utilisateur
+        if (!user.getEmail().equals(req.getEmail())
+                && userRepository.existsByEmail(req.getEmail())) {
+            throw new IllegalArgumentException("Cet email est déjà utilisé");
+        }
+
+        user.setEmail(req.getEmail());
+        user.setRole(User.Role.valueOf(req.getRole()));
+        user.setEnabled(req.getEnabled());
+        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+            user.setPassword(passwordEncoder.encode(req.getPassword()));
         }
         return userRepository.save(user);
     }

@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,7 +41,8 @@ public class AuthController {
             return ResponseEntity.status(401).body("Non authentifié");
         }
         User user = userRepository.findByUsername(principal.getName())
-                .orElseThrow();
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Utilisateur introuvable : " + principal.getName()));
         return ResponseEntity.ok(Map.of(
                 "id", user.getId(),
                 "username", user.getUsername(),

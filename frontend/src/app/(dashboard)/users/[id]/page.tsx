@@ -49,6 +49,17 @@ export default function UserDetailPage() {
         }
     };
 
+    const handleDelete = async () => {
+        if (!confirm(`Supprimer ${userData.username} ?`)) return;
+        try {
+            await usersApi.delete(Number(id));
+            toast.success("Compte supprimé avec succès");
+            router.push("/users");
+        } catch (err: any) {
+            toast.error(err.message);
+        }
+    };
+
     const toggleEnabled = async () => {
         const updated = { ...form, enabled: !form.enabled };
         setForm(updated);
@@ -150,7 +161,13 @@ export default function UserDetailPage() {
                         </button>
                     </div>
 
-                    <div className="flex justify-center w-full">
+                    <div className="flex items-center justify-between w-full mt-6 pt-4 border-t border-gray-100">
+                        <button
+                            onClick={handleDelete}
+                            className="px-4 py-2.5 text-sm font-medium text-red-800 bg-red-100 hover:bg-red-200 rounded-lg transition cursor-pointer"
+                        >
+                            Supprimer le compte
+                        </button>
                         <button
                             onClick={handleSave}
                             disabled={saving}
