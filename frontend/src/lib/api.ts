@@ -1,6 +1,22 @@
-const API_BASE = typeof window !== "undefined"
-    ? `http://${window.location.hostname}:8080/api`
-    : "http://localhost:8080/api";
+import {
+    MOCK_STATIONS,
+    MOCK_USERS,
+    mockGetLatestWeather,
+    mockGetStationWeather,
+    mockLogin,
+    mockRegister,
+    mockGetMe,
+} from "./mock";
+
+// ═══════════════════════════════════════════════════════
+// BASCULER ICI : true = données fictives, false = vrai backend
+// ═══════════════════════════════════════════════════════
+const USE_MOCKS = true;
+
+const API_BASE =
+    typeof window !== "undefined"
+        ? `http://${window.location.hostname}:8080/api`
+        : "http://localhost:8080/api";
 
 function getToken(): string | null {
     if (typeof window === "undefined") return null;
@@ -29,47 +45,146 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         throw new Error(err.error || `Erreur ${res.status}`);
     }
 
+    if (res.status === 204) return {} as T;
     return res.json();
 }
 
-// ─── Auth ───
+// ═══════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════
 export const auth = {
-    login: (username: string, password: string) =>
-        request<{ token: string; username: string; role: string }>("/auth/login", {
+    login: async (username: string, password: string) => {
+        if (USE_MOCKS) return mockLogin(username, password);
+        return request<{ token: string; username: string; role: string }>("/auth/login", {
             method: "POST",
             body: JSON.stringify({ username, password }),
-        }),
-    register: (username: string, password: string, email: string) =>
-        request<{ token: string; username: string; role: string }>("/auth/register", {
+        });
+    },
+
+    register: async (username: string, password: string, email: string) => {
+        if (USE_MOCKS) return mockRegister(username, password, email);
+        return request<{ token: string; username: string; role: string }>("/auth/register", {
             method: "POST",
             body: JSON.stringify({ username, password, email }),
-        }),
-    me: () => request<{ id: number; username: string; email: string; role: string }>("/auth/me"),
+        });
+    },
+
+    me: async () => {
+        if (USE_MOCKS) return mockGetMe();
+        return request<{ id: number; username: string; email: string; role: string }>("/auth/me");
+    },
 };
 
-// ─── Stations ───
+// ═══════════════════════════════════════════════════════
+// STATIONS
+// ═══════════════════════════════════════════════════════
 export const stations = {
-    getAll: () => request<any[]>("/stations"),
-    getById: (id: number) => request<any>(`/stations/${id}`),
-    create: (data: any) => request("/stations", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: number, data: any) =>
-        request(`/stations/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (id: number) => request(`/stations/${id}`, { method: "DELETE" }),
+    getAll: async () => {
+        if (USE_MOCKS) return [...MOCK_STATIONS];
+        return request<any[]>("/stations");
+    },
+
+    getById: async (id: number) => {
+        if (USE_MOCKS) {
+            const found = MOCK_STATIONS.find((s) => s.id === id);
+            if (!found) throw new Error("Station introuvable");
+            return { ...found };
+        }
+        return request<any>(`/stations/${id}`);
+    },
+
+    create: async (data: any) => {
+        if (USE_MOCKS) {
+            const newStation = { ...data, id: Date.now(), createdAt: new Date().toISOString(), lastSeenAt: null };
+            MOCK_STATIONS.push(newStation);
+            return newStation;
+        }
+        return request("/stations", { method: "POST", body: JSON.stringify(data) });
+    },
+
+    update: async (id: number, data: any) => {
+        if (USE_MOCKS) {
+            const idx = MOCK_STATIONS.findIndex((s) => s.id === id);
+            if (idx === -1) throw new Error("Station introuvable");
+            MOCK_STATIONS[idx] = { ...MOCK_STATIONS[idx], ...data };
+            return { ...MOCK_STATIONS[idx] };
+        }
+        return request(`/stations/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    },
+
+    delete: async (id: number) => {
+        if (USE_MOCKS) {
+            const idx = MOCK_STATIONS.findIndex((s) => s.id === id);
+            if (idx !== -1) MOCK_STATIONS.splice(idx, 1);
+            return {};
+        }
+        return request(`/stations/${id}`, { method: "DELETE" });
+    },
 };
 
-// ─── Users ───
+// ═══════════════════════════════════════════════════════
+// USERS
+// ═══════════════════════════════════════════════════════
 export const users = {
-    getAll: () => request<any[]>("/users"),
-    getById: (id: number) => request<any>(`/users/${id}`),
-    create: (data: any) => request("/users", { method: "POST", body: JSON.stringify(data) }),
-    update: (id: number, data: any) =>
-        request(`/users/${id}`, { method: "PUT", body: JSON.stringify(data) }),
-    delete: (id: number) => request(`/users/${id}`, { method: "DELETE" }),
+    getAll: async () => {
+        if (USE_MOCKS) return [...MOCK_USERS];
+        return request<any[]>("/users");
+    },
+
+    getById: async (id: number) => {
+        if (USE_MOCKS) {
+            const found = MOCK_USERS.find((u) => u.id === id);
+            if (!found) throw new Error("Utilisateur introuvable");
+            return { ...found };
+        }
+        return request<any>(`/users/${id}`);
+    },
+
+    create: async (data: any) => {
+        if (USE_MOCKS) {
+            const newUser = {
+                ...data,
+                id: Date.now(),
+                enabled: true,
+                createdAt: new Date().toISOString(),
+            };
+            MOCK_USERS.push(newUser);
+            return newUser;
+        }
+        return request("/users", { method: "POST", body: JSON.stringify(data) });
+    },
+
+    update: async (id: number, data: any) => {
+        if (USE_MOCKS) {
+            const idx = MOCK_USERS.findIndex((u) => u.id === id);
+            if (idx === -1) throw new Error("Utilisateur introuvable");
+            MOCK_USERS[idx] = { ...MOCK_USERS[idx], ...data };
+            return { ...MOCK_USERS[idx] };
+        }
+        return request(`/users/${id}`, { method: "PUT", body: JSON.stringify(data) });
+    },
+
+    delete: async (id: number) => {
+        if (USE_MOCKS) {
+            const idx = MOCK_USERS.findIndex((u) => u.id === id);
+            if (idx !== -1) MOCK_USERS.splice(idx, 1);
+            return {};
+        }
+        return request(`/users/${id}`, { method: "DELETE" });
+    },
 };
 
-// ─── Weather ───
+// ═══════════════════════════════════════════════════════
+// WEATHER (données capteurs)
+// ═══════════════════════════════════════════════════════
 export const weather = {
-    getLatest: () => request<any[]>("/weather/latest"),
-    getByStation: (stationId: string, range = "24h") =>
-        request<any[]>(`/weather/station/${stationId}?range=${range}`),
+    getLatest: async () => {
+        if (USE_MOCKS) return mockGetLatestWeather();
+        return request<any[]>("/weather/latest");
+    },
+
+    getByStation: async (stationId: string, range = "24h") => {
+        if (USE_MOCKS) return mockGetStationWeather(stationId, range);
+        return request<any[]>(`/weather/station/${stationId}?range=${range}`);
+    },
 };
