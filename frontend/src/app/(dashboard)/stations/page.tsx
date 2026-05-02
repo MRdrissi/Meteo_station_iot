@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { stations as stationsApi, weather } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import Link from "next/link";
 import {
     Plus,
@@ -36,6 +37,8 @@ export default function StationsListPage() {
         longitude: 0,
     });
     const [saving, setSaving] = useState(false);
+
+    const toast = useToast();
 
     useEffect(() => {
         const load = async () => {
@@ -78,8 +81,9 @@ export default function StationsListPage() {
             setStationsList([...stationsList, created]);
             setShowAdd(false);
             setNewStation({ stationId: "", city: "", latitude: 0, longitude: 0 });
+            toast.success(`Station ${created.city || newStation.city} créée`);
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setSaving(false);
         }
@@ -91,8 +95,9 @@ export default function StationsListPage() {
         try {
             await stationsApi.delete(id);
             setStationsList(stationsList.filter((s) => s.id !== id));
+            toast.success(`Station ${city} supprimée`);
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         }
     };
 

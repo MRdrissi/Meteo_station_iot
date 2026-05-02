@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { users as usersApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import { ArrowLeft, Save, Loader2, UserCog } from "lucide-react";
 
 export default function UserDetailPage() {
@@ -15,6 +16,8 @@ export default function UserDetailPage() {
     const [form, setForm] = useState({ email: "", role: "USER", enabled: true, password: "" });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    const toast = useToast();
 
     useEffect(() => {
         if (currentUser && currentUser.role !== "ADMIN") {
@@ -38,9 +41,9 @@ export default function UserDetailPage() {
             if (form.password) payload.password = form.password;
             const updated = await usersApi.update(Number(id), payload);
             setUserData(updated);
-            alert("Utilisateur mis à jour");
+            toast.success("Utilisateur mis à jour");
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setSaving(false);
         }

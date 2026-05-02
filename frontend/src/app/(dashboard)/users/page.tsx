@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { users as usersApi } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -23,6 +24,8 @@ export default function UsersPage() {
     const [showAdd, setShowAdd] = useState(false);
     const [newUser, setNewUser] = useState({ username: "", email: "", password: "", role: "USER" });
     const [saving, setSaving] = useState(false);
+
+    const toast = useToast();
 
     // Rediriger si pas ADMIN
     useEffect(() => {
@@ -52,8 +55,9 @@ export default function UsersPage() {
             setUsersList([...usersList, created]);
             setShowAdd(false);
             setNewUser({ username: "", email: "", password: "", role: "USER" });
+            toast.success(`Utilisateur ${created.username || newUser.username} créé`);
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setSaving(false);
         }

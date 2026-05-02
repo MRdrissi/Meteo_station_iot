@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { stations as stationsApi, weather } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/Toast";
 import {
     ArrowLeft,
     Save,
@@ -26,6 +27,8 @@ export default function StationDetailPage() {
     const [form, setForm] = useState({ city: "", latitude: 0, longitude: 0, status: "" });
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
+
+    const toast = useToast();
 
     useEffect(() => {
         const load = async () => {
@@ -55,8 +58,9 @@ export default function StationDetailPage() {
             const updated = await stationsApi.update(Number(id), form);
             setStation(updated);
             setEditing(false);
+            toast.success("Station mise à jour");
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         } finally {
             setSaving(false);
         }
@@ -68,7 +72,7 @@ export default function StationDetailPage() {
             await stationsApi.delete(Number(id));
             router.push("/");
         } catch (err: any) {
-            alert(err.message);
+            toast.error(err.message);
         }
     };
 
