@@ -118,7 +118,7 @@ export default function StationsListPage() {
                     <button
                         onClick={() => setShowAdd(true)}
                         className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white
-                       rounded-lg hover:bg-brand-700 transition text-sm font-medium"
+                       rounded-lg hover:bg-brand-700 transition text-sm font-medium cursor-pointer"
                     >
                         <Plus className="w-4 h-4" />
                         Nouvelle station
@@ -143,12 +143,12 @@ export default function StationsListPage() {
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
                     className="px-3 py-2.5 text-sm border border-gray-300 rounded-lg
-                     focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none"
+               focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none font-sans cursor-pointer"
                 >
-                    <option value="ALL">Tous les statuts</option>
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                    <option value="MAINTENANCE">Maintenance</option>
+                    <option value="ALL" className="font-sans">Tous les statuts</option>
+                    <option value="ACTIVE" className="font-sans">Active</option>
+                    <option value="INACTIVE" className="font-sans">Inactive</option>
+                    <option value="MAINTENANCE" className="font-sans">Maintenance</option>
                 </select>
             </div>
 
@@ -195,14 +195,14 @@ export default function StationsListPage() {
                             onClick={handleAddStation}
                             disabled={saving || !newStation.stationId || !newStation.city}
                             className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium
-                         hover:bg-brand-700 transition disabled:opacity-60"
+                         hover:bg-brand-700 transition disabled:opacity-60 cursor-pointer"
                         >
                             {saving ? "Création..." : "Créer"}
                         </button>
                         <button
                             onClick={() => setShowAdd(false)}
                             className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm
-                         hover:bg-gray-200 transition"
+                         hover:bg-gray-200 transition cursor-pointer"
                         >
                             Annuler
                         </button>
@@ -211,7 +211,7 @@ export default function StationsListPage() {
             )}
 
             {/* Tableau des stations */}
-            <div className="bg-white rounded-xl border border-gray-200">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
                     <tr className="text-left text-gray-400 text-xs uppercase border-b border-gray-100">
@@ -233,14 +233,14 @@ export default function StationsListPage() {
                                 className="border-b border-gray-50 hover:bg-gray-50/50 transition"
                             >
                                 {/* Station info */}
-                                <td className="px-6 py-4">
+                                <td className="px-4 py-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 bg-brand-50 rounded-lg flex items-center justify-center">
+                                        <div className="w-9 h-9 bg-brand-50 rounded-lg flex items-center justify-center shrink-0">
                                             <Radio className="w-4 h-4 text-brand-600" />
                                         </div>
                                         <div>
-                                            <p className="font-medium text-gray-900">{s.city}</p>
-                                            <p className="text-xs text-gray-400">{s.stationId}</p>
+                                            <p className="font-medium text-gray-900 whitespace-nowrap">{s.city}</p>
+                                            <p className="text-xs text-gray-400 whitespace-nowrap">{s.stationId}</p>
                                         </div>
                                     </div>
                                 </td>
@@ -248,13 +248,13 @@ export default function StationsListPage() {
                                 {/* Coordonnées */}
                                 <td className="px-6 py-4 text-gray-500">
                                     <div className="flex items-center gap-1.5">
-                                        <MapPin className="w-3.5 h-3.5 text-gray-400" />
-                                        <span>{s.latitude}, {s.longitude}</span>
+                                        <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                                        <span className="whitespace-nowrap">{s.latitude}, {s.longitude}</span>
                                     </div>
                                 </td>
 
                                 {/* Statut */}
-                                <td className="px-6 py-4">
+                                <td className="px-4 py-4">
                     <span
                         className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             s.status === "ACTIVE"
@@ -331,7 +331,6 @@ export default function StationsListPage() {
                                             href={`/stations/${s.id}`}
                                             className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50
                                    rounded-lg transition"
-                                            title="Voir détails"
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Link>
@@ -341,15 +340,13 @@ export default function StationsListPage() {
                                                     href={`/stations/${s.id}`}
                                                     className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50
                                        rounded-lg transition"
-                                                    title="Modifier"
                                                 >
                                                     <Pencil className="w-4 h-4" />
                                                 </Link>
                                                 <button
                                                     onClick={() => handleDelete(s.id, s.city)}
-                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50
+                                                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 cursor-pointer
                                        rounded-lg transition"
-                                                    title="Supprimer"
                                                 >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
