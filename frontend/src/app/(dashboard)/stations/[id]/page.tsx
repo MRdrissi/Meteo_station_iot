@@ -91,7 +91,7 @@ export default function StationDetailPage() {
             {/* Retour */}
             <button
                 onClick={() => router.back()}
-                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6"
+                className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 cursor-pointer"
             >
                 <ArrowLeft className="w-4 h-4" />
                 Retour
@@ -125,7 +125,7 @@ export default function StationDetailPage() {
                             <button
                                 onClick={() => setEditing(true)}
                                 className="px-4 py-2 text-sm font-medium bg-brand-600 text-white
-                           rounded-lg hover:bg-brand-700 transition"
+                           rounded-lg hover:bg-brand-700 transition cursor-pointer"
                             >
                                 Modifier
                             </button>
@@ -135,7 +135,7 @@ export default function StationDetailPage() {
                                 disabled={saving}
                                 className="flex items-center gap-2 px-4 py-2 text-sm font-medium
                            bg-brand-600 text-white rounded-lg hover:bg-brand-700
-                           transition disabled:opacity-60"
+                           transition disabled:opacity-60 cursor-pointer"
                             >
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                                 Enregistrer
@@ -143,8 +143,8 @@ export default function StationDetailPage() {
                         )}
                         <button
                             onClick={handleDelete}
-                            className="px-4 py-2 text-sm font-medium text-red-600
-                         bg-red-50 hover:bg-red-100 rounded-lg transition"
+                            className="px-4 py-2.5 text-sm font-medium text-red-800
+                         bg-red-100 hover:bg-red-200 rounded-lg transition cursor-pointer"
                         >
                             <Trash2 className="w-4 h-4" />
                         </button>
@@ -199,11 +199,11 @@ export default function StationDetailPage() {
                                     value={form.status}
                                     onChange={(e) => setForm({ ...form, status: e.target.value })}
                                     className="w-full px-3 py-2 rounded-lg border border-gray-300
-                             focus:ring-2 focus:ring-brand-500 outline-none"
+                                     focus:ring-2 focus:ring-brand-500 outline-none font-sans"
                                 >
-                                    <option value="ACTIVE">ACTIVE</option>
-                                    <option value="INACTIVE">INACTIVE</option>
-                                    <option value="MAINTENANCE">MAINTENANCE</option>
+                                    <option value="ACTIVE" className="font-sans">ACTIVE</option>
+                                    <option value="INACTIVE" className="font-sans">INACTIVE</option>
+                                    <option value="MAINTENANCE" className="font-sans">MAINTENANCE</option>
                                 </select>
                             </div>
                         </div>
