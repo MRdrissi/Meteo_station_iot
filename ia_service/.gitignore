@@ -1,0 +1,5 @@
+venv/
+data/
+modeles_sauvegardes/*.pkl
+.env
+__pycache__/
