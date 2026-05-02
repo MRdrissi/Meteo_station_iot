@@ -11,6 +11,7 @@ import {
     UserCheck,
     UserX,
     Search,
+    Pencil,
 } from "lucide-react";
 
 export default function UsersPage() {
@@ -76,7 +77,7 @@ export default function UsersPage() {
                 <button
                     onClick={() => setShowAdd(true)}
                     className="flex items-center gap-2 px-4 py-2.5 bg-brand-600 text-white
-                     rounded-lg hover:bg-brand-700 transition text-sm font-medium"
+                     rounded-lg hover:bg-brand-700 transition text-sm font-medium cursor-pointer"
                 >
                     <Plus className="w-4 h-4" />
                     Nouvel utilisateur
@@ -128,10 +129,10 @@ export default function UsersPage() {
                             value={newUser.role}
                             onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                             className="px-3 py-2 rounded-lg border border-gray-300 text-sm
-                         focus:ring-2 focus:ring-brand-500 outline-none"
+                             focus:ring-2 focus:ring-brand-500 outline-none font-sans cursor-pointer"
                         >
-                            <option value="USER">USER</option>
-                            <option value="ADMIN">ADMIN</option>
+                            <option value="USER" className="font-sans cursor-pointer">Utilisateur</option>
+                            <option value="ADMIN" className="font-sans cursor-pointer">Administrateur</option>
                         </select>
                     </div>
                     <div className="flex gap-2 mt-4">
@@ -139,14 +140,14 @@ export default function UsersPage() {
                             onClick={handleAddUser}
                             disabled={saving}
                             className="px-4 py-2 bg-brand-600 text-white rounded-lg text-sm font-medium
-                         hover:bg-brand-700 transition disabled:opacity-60"
+                         hover:bg-brand-700 transition disabled:opacity-60 cursor-pointer"
                         >
                             {saving ? "Création..." : "Créer"}
                         </button>
                         <button
                             onClick={() => setShowAdd(false)}
                             className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm
-                         hover:bg-gray-200 transition"
+                         hover:bg-gray-200 transition cursor-pointer"
                         >
                             Annuler
                         </button>
@@ -207,9 +208,9 @@ export default function UsersPage() {
                             <td className="px-6 py-4">
                                 <Link
                                     href={`/users/${u.id}`}
-                                    className="text-brand-600 hover:underline text-sm font-medium"
+                                    className="p-2 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition inline-flex"
                                 >
-                                    Modifier
+                                    <Pencil className="w-4 h-4" />
                                 </Link>
                             </td>
                         </tr>
