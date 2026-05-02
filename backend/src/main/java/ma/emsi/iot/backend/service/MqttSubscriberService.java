@@ -23,13 +23,14 @@ public class MqttSubscriberService {
     private String topic;
 
     private final WeatherValidationService validationService;
-    private final MockStorageService mockStorageService;
+    //private final MockStorageService mockStorageService;
     private final AlertEngineService alertEngineService;
+    private final InfluxStorageService influxStorageService;
     private MqttClient client;
 
-    public MqttSubscriberService(WeatherValidationService validationService, MockStorageService mockStorageService, AlertEngineService alertEngineService) {
+    public MqttSubscriberService(WeatherValidationService validationService,InfluxStorageService influxStorageService /*MockStorageService mockStorageService*/, AlertEngineService alertEngineService) {
         this.validationService = validationService;
-        this.mockStorageService = mockStorageService;
+        this.influxStorageService = influxStorageService;
         this.alertEngineService = alertEngineService;
     }
 
@@ -69,7 +70,7 @@ public class MqttSubscriberService {
 
                     if (validationService.isPayloadValid(weatherData)) {
                         System.out.println("🟢 [" + weatherData.getMetadata().getStation_id() + "] Validation réussie.");
-                        mockStorageService.sauvegarder(weatherData); // On envoie en base
+                        influxStorageService.sauvegarder(weatherData); // On envoie en base
                         System.out.println("Station : " + weatherData.getMetadata().getStation_id());
                         System.out.println("Température extraite : " + weatherData.getSensors().getTemperature_c() + " °C");
                         System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");

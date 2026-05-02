@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # 1. TON BROKER MQTT ACTUEL (Intact)
   mosquitto:
     image: eclipse-mosquitto:latest
     container_name: mon_broker_mqtt
@@ -8,3 +9,37 @@ services:
       - "1883:1883"
     volumes:
       - ./config:/mosquitto/config
+
+  # 2. NOUVEAU : POSTGRESQL (Pour les Méta-données : Stations, Utilisateurs)
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: iot-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: rootpassword
+      POSTGRES_DB: iot_meteo_db
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  # 3. NOUVEAU : INFLUXDB (Pour les Séries Temporelles : Météo)
+  influx-db:
+    image: influxdb:2.7-alpine
+    container_name: iot-influxdb
+    ports:
+      - "8086:8086"
+    environment:
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: admin
+      DOCKER_INFLUXDB_INIT_PASSWORD: adminpassword
+      DOCKER_INFLUXDB_INIT_ORG: emsi-iot
+      DOCKER_INFLUXDB_INIT_BUCKET: meteo-data
+      DOCKER_INFLUXDB_INIT_ADMIN_TOKEN: mon-token-ultra-secret-12345
+    volumes:
+      - influx-data:/var/lib/influxdb2
+
+# NOUVEAU : Déclaration des volumes pour que les bases ne s'effacent pas si on redémarre le PC
+volumes:
+  postgres-data:
+  influx-data:
