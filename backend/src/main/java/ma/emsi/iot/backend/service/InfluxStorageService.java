@@ -5,6 +5,8 @@ import com.influxdb.client.InfluxDBClientFactory;
 import com.influxdb.client.WriteApiBlocking;
 import com.influxdb.client.domain.WritePrecision;
 import com.influxdb.client.write.Point;
+import com.influxdb.query.FluxRecord;
+import com.influxdb.query.FluxTable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import ma.emsi.iot.backend.dto.WeatherPayload;
@@ -12,6 +14,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class InfluxStorageService {
@@ -61,6 +65,33 @@ public class InfluxStorageService {
         writeApi.writePoint(point);
         System.out.println("[INFLUXDB] Donnée persistée pour la station : " + payload.getMetadata().getStation_id());
 
+    }
+
+    public List<Double> getDernieresTemperatures(String stationId, int limite) {
+        List<Double> temperatures = new ArrayList<>();
+
+        // Requête FLUX : On remonte sur 24h, on filtre par station et par température, on trie du plus récent au plus ancien, et on limite.
+        String flux = String.format(
+                "from(bucket: \"%s\") " +
+                        "|> range(start: -24h) " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"mesure_meteo\") " +
+                        "|> filter(fn: (r) => r[\"station_id\"] == \"%s\") " +
+                        "|> filter(fn: (r) => r[\"_field\"] == \"temperature\") " +
+                        "|> sort(columns: [\"_time\"], desc: true) " +
+                        "|> limit(n: %d)", bucket, stationId, limite);
+
+        try {
+            List<FluxTable> tables = client.getQueryApi().query(flux, org);
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    temperatures.add((Double) record.getValueByKey("_value"));
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erreur lors de la lecture d'InfluxDB : " + e.getMessage());
+        }
+
+        return temperatures;
     }
 
     @PreDestroy

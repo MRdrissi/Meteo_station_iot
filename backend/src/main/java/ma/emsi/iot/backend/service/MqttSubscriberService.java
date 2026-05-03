@@ -4,6 +4,7 @@ package ma.emsi.iot.backend.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import ma.emsi.iot.backend.dto.PredictionResponse;
 import ma.emsi.iot.backend.dto.WeatherPayload;
 import org.eclipse.paho.client.mqttv3.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,11 +28,15 @@ public class MqttSubscriberService {
     private final AlertEngineService alertEngineService;
     private final InfluxStorageService influxStorageService;
     private MqttClient client;
+    private final IaPredictionService iaPredictionService;
 
-    public MqttSubscriberService(WeatherValidationService validationService,InfluxStorageService influxStorageService /*MockStorageService mockStorageService*/, AlertEngineService alertEngineService) {
+
+
+    public MqttSubscriberService(WeatherValidationService validationService,InfluxStorageService influxStorageService /*MockStorageService mockStorageService*/, AlertEngineService alertEngineService ,IaPredictionService iaPredictionService) {
         this.validationService = validationService;
         this.influxStorageService = influxStorageService;
         this.alertEngineService = alertEngineService;
+        this.iaPredictionService = iaPredictionService;
     }
 
     @PostConstruct
@@ -71,6 +76,7 @@ public class MqttSubscriberService {
                     if (validationService.isPayloadValid(weatherData)) {
                         System.out.println("🟢 [" + weatherData.getMetadata().getStation_id() + "] Validation réussie.");
                         influxStorageService.sauvegarder(weatherData); // On envoie en base
+                        PredictionResponse prevision = iaPredictionService.fairePrediction(weatherData);
                         System.out.println("Station : " + weatherData.getMetadata().getStation_id());
                         System.out.println("Température extraite : " + weatherData.getSensors().getTemperature_c() + " °C");
                         System.out.println("Vitesse du vent : " + weatherData.getSensors().getWind_speed_kmh() + " km/h");
@@ -96,6 +102,7 @@ public class MqttSubscriberService {
             System.err.println("Erreur MQTT : " + e.getMessage());
         }
     }
+
 
     @PreDestroy
     public void disconnect() {
