@@ -28,7 +28,7 @@ public class IaPredictionService {
             "ST-RABAT",       "STATION_RABAT",
             "ST-MARRAKECH",   "STATION_MARRAKECH",
             "ST-TANGER",      "STATION_TANGER",
-            "ST-FES",         "STATION_IFRANE"
+            "ST-FES",         "STATION_IFRAN"
     );
 
     //  Constructor injection
@@ -72,15 +72,28 @@ public class IaPredictionService {
 
         // 5. Appel HTTP POST vers FastAPI
         try {
+            // ⚠️ ATTENTION : On ajoute "/predict/all" à la fin de l'URL
+            String endpoint = fastApiUrl + "/predict/all";
+
             PredictionResponse response = restTemplate.postForObject(
-                    fastApiUrl, request, PredictionResponse.class
+                    endpoint, request, PredictionResponse.class
             );
-            System.out.println(" [IA] Prédiction pour " + stationId
-                    + " → " + response.getTemperature_1h() + "°C dans 1h.");
+
+            // On vérifie que la réponse n'est pas nulle et on affiche un petit résumé
+            if (response != null && response.getPrevisions_1h() != null) {
+                System.out.println(" [IA] Prédictions reçues pour " + stationId + " :");
+                System.out.println("   -> Dans 1h  : " + response.getPrevisions_1h().getTemperature() + "°C");
+                System.out.println("   -> Dans 6h  : " + response.getPrevisions_6h().getTemperature() + "°C");
+                System.out.println("   -> Dans 24h : " + response.getPrevisions_24h().getTemperature() + "°C");
+            }
+
             return response;
+
         } catch (Exception e) {
-            System.err.println(" [IA] FastAPI indisponible : " + e.getMessage());
+            System.err.println("❌ [IA] FastAPI indisponible ou erreur : " + e.getMessage());
             return null; // Spring Boot continue sans crasher
         }
+
+
     }
 }
