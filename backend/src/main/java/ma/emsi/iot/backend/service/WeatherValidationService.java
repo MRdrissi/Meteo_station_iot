@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class WeatherValidationService {
 
     final Map<String, EtatPrecedent> memoireStations = new ConcurrentHashMap<>();
+
     public boolean isPayloadValid(WeatherPayload payload) {
 
 

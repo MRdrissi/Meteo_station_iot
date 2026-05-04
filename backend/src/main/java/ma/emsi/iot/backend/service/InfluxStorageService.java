@@ -9,7 +9,13 @@ import com.influxdb.query.FluxRecord;
 import com.influxdb.query.FluxTable;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+
+// Imports de tes DTOs
+import ma.emsi.iot.backend.dto.WeatherPayload.Metadata;
+import ma.emsi.iot.backend.dto.WeatherPayload.Sensors;
+import ma.emsi.iot.backend.dto.WeatherPayload.SystemData; // ⚠️ Adapte ce nom selon la vraie classe de ton DTO (ex: SystemInfo)
 import ma.emsi.iot.backend.dto.WeatherPayload;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -33,44 +39,43 @@ public class InfluxStorageService {
     private String bucket;
 
     private InfluxDBClient client;
-    WriteApiBlocking writeApi;
+    private WriteApiBlocking writeApi;
 
     @PostConstruct
     public void init() {
         // Initialisation du client InfluxDB au démarrage
         this.client = InfluxDBClientFactory.create(url, token.toCharArray(), org, bucket);
         this.writeApi = client.getWriteApiBlocking();
-        System.out.println("CLIENT INFLUXDB CONNECTÉ");
+        System.out.println("✅ CLIENT INFLUXDB CONNECTÉ");
     }
 
+    // =========================================================
+    // 1. ÉCRITURE : Sauvegarder la donnée venant de MQTT
+    // =========================================================
     public void sauvegarder(WeatherPayload payload) {
-
-        // 2. On transforme l'objet Java en un "Point" InfluxDB
-        // "mesure_meteo" est le nom de la table
         Point point = Point
                 .measurement("mesure_meteo")
-                .addTag("station_id", payload.getMetadata().getStation_id())// Tag = Index pour recherche rapide
+                .addTag("station_id", payload.getMetadata().getStation_id())
                 .addTag("source", payload.getMetadata().getType())
                 .addTag("type" , payload.getMetadata().getType())
-                .addField("temperature", payload.getSensors().getTemperature_c()) // Field = Donnée numérique
+                .addField("temperature", payload.getSensors().getTemperature_c())
                 .addField("humidite", payload.getSensors().getHumidity_pct())
                 .addField("pression", payload.getSensors().getPressure_hpa())
                 .addField("vent", payload.getSensors().getWind_speed_kmh())
                 .addField("luminosite", payload.getSensors().getLuminosity_lux())
                 .addField("batterie", payload.getSystem().getBattery_pct())
-                //.time(Instant.now(), WritePrecision.NS); // On ajoute le timestamp précis ← heure du backend, pas du capteur
                 .time(Instant.parse(payload.getMetadata().getTimestamp()), WritePrecision.NS);
 
-        // 3. Envoi effectif à la base de données
         writeApi.writePoint(point);
-        System.out.println("[INFLUXDB] Donnée persistée pour la station : " + payload.getMetadata().getStation_id());
-
+        System.out.println("💾 [INFLUXDB] Donnée persistée pour la station : " + payload.getMetadata().getStation_id());
     }
 
+    // =========================================================
+    // 2. LECTURE (IA) : Récupérer uniquement les Lags
+    // =========================================================
     public List<Double> getDernieresTemperatures(String stationId, int limite) {
         List<Double> temperatures = new ArrayList<>();
 
-        // Requête FLUX : On remonte sur 24h, on filtre par station et par température, on trie du plus récent au plus ancien, et on limite.
         String flux = String.format(
                 "from(bucket: \"%s\") " +
                         "|> range(start: -24h) " +
@@ -88,17 +93,90 @@ public class InfluxStorageService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Erreur lors de la lecture d'InfluxDB : " + e.getMessage());
+            System.err.println("⚠️ Erreur lors de la lecture des lags InfluxDB : " + e.getMessage());
         }
 
         return temperatures;
     }
 
+    // =========================================================
+    // 3. LECTURE (CONTROLLER) : Reconstruire l'historique complet
+    // =========================================================
+    public List<WeatherPayload> getHistorique(int limite) {
+        List<WeatherPayload> historique = new ArrayList<>();
+
+        // Utilisation de "pivot" pour remettre tous les champs sur une seule ligne
+        String flux = String.format(
+                "from(bucket: \"%s\") " +
+                        "|> range(start: -24h) " +
+                        "|> filter(fn: (r) => r[\"_measurement\"] == \"mesure_meteo\") " +
+                        "|> pivot(rowKey:[\"_time\"], columnKey: [\"_field\"], valueColumn: \"_value\") " +
+                        "|> sort(columns: [\"_time\"], desc: true) " +
+                        "|> limit(n: %d)", bucket, limite);
+
+        try {
+            List<FluxTable> tables = client.getQueryApi().query(flux, org);
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+
+                    // 1. Reconstruction des Metadata
+                    Metadata metadata = new Metadata();
+                    metadata.setStation_id((String) record.getValueByKey("station_id"));
+                    // On récupère le tag "source" ou "type" selon ton choix lors de l'enregistrement
+                    metadata.setType((String) record.getValueByKey("source"));
+                    metadata.setTimestamp(record.getTime() != null ? record.getTime().toString() : "");
+
+                    // 2. Reconstruction des Sensors (SÉCURISÉE)
+                    Sensors sensors = new Sensors();
+
+                    Object tempObj = record.getValueByKey("temperature");
+                    if (tempObj instanceof Number) sensors.setTemperature_c(((Number) tempObj).doubleValue());
+
+                    Object humObj = record.getValueByKey("humidite");
+                    if (humObj instanceof Number) sensors.setHumidity_pct(((Number) humObj).doubleValue());
+
+                    Object presObj = record.getValueByKey("pression");
+                    if (presObj instanceof Number) sensors.setPressure_hpa(((Number) presObj).doubleValue());
+
+                    Object ventObj = record.getValueByKey("vent");
+                    if (ventObj instanceof Number) sensors.setWind_speed_kmh(((Number) ventObj).doubleValue());
+
+                    // Utilisation de .intValue() pour la luminosité
+                    Object lumObj = record.getValueByKey("luminosite");
+                    if (lumObj instanceof Number) sensors.setLuminosity_lux(((Number) lumObj).intValue());
+
+                    // 3. Reconstruction du System Data (SÉCURISÉE)
+                    SystemData systemData = new SystemData();
+                    Object batObj = record.getValueByKey("batterie");
+                    // Utilisation de .intValue() pour la batterie
+                    if (batObj instanceof Number) systemData.setBattery_pct(((Number) batObj).intValue());
+
+                    // 4. Assemblage final
+                    WeatherPayload payload = new WeatherPayload();
+                    payload.setMetadata(metadata);
+                    payload.setSensors(sensors);
+                    payload.setSystem(systemData);
+
+                    historique.add(payload);
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erreur lors de la lecture de l'historique InfluxDB : " + e.getMessage());
+            e.printStackTrace(); // Utile pour voir la ligne exacte en cas d'autre type de crash
+        }
+
+        return historique;
+    }
+
+    // =========================================================
+    // 4. NETTOYAGE : Fermeture propre de la base
+    // =========================================================
     @PreDestroy
     public void close() {
         if (client != null) {
             client.close();
-            System.out.println("Connexion InfluxDB fermée proprement.");
+            System.out.println("🔌 Connexion InfluxDB fermée proprement.");
         }
     }
 }
