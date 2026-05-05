@@ -72,7 +72,7 @@ public class IaPredictionService {
 
         // 5. Appel HTTP POST vers FastAPI
         try {
-            // ⚠️ ATTENTION : On ajoute "/predict/all" à la fin de l'URL
+            // ATTENTION : On ajoute "/predict/all" à la fin de l'URL
             String endpoint = fastApiUrl + "/predict/all";
 
             PredictionResponse response = restTemplate.postForObject(
@@ -90,7 +90,7 @@ public class IaPredictionService {
             return response;
 
         } catch (Exception e) {
-            System.err.println("❌ [IA] FastAPI indisponible ou erreur : " + e.getMessage());
+            System.err.println("[IA] FastAPI indisponible ou erreur : " + e.getMessage());
             return null; // Spring Boot continue sans crasher
         }
 

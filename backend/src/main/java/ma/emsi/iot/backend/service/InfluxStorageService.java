@@ -11,6 +11,9 @@ import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 
 // Imports de tes DTOs
+import ma.emsi.iot.backend.dto.LatestDataResponse;
+import ma.emsi.iot.backend.dto.MesuresDTO;
+import ma.emsi.iot.backend.dto.StationInfoDTO;
 import ma.emsi.iot.backend.dto.WeatherPayload.Metadata;
 import ma.emsi.iot.backend.dto.WeatherPayload.Sensors;
 import ma.emsi.iot.backend.dto.WeatherPayload.SystemData; // ⚠️ Adapte ce nom selon la vraie classe de ton DTO (ex: SystemInfo)
@@ -22,6 +25,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InfluxStorageService {
@@ -93,10 +97,58 @@ public class InfluxStorageService {
                 }
             }
         } catch (Exception e) {
-            System.err.println("⚠️ Erreur lors de la lecture des lags InfluxDB : " + e.getMessage());
+            System.err.println("️ Erreur lors de la lecture des lags InfluxDB : " + e.getMessage());
         }
 
         return temperatures;
+    }
+
+    public Optional<LatestDataResponse> getDerniereMesure(String stationId) {
+        // SÉCURITÉ : Validation de l'ID (lettres, chiffres, tirets uniquement)
+        if (stationId == null || !stationId.matches("^[a-zA-Z0-9_-]+$")) {
+            System.err.println("⚠️ Tentative d'injection ou ID invalide : " + stationId);
+            return Optional.empty();
+        }
+
+        // ⏱️ LOGIQUE : On cherche sur 24h au lieu de 1h au cas où le capteur a un retard
+        String flux = String.format("""
+        from(bucket: "%s")
+            |> range(start: -24h)
+            |> filter(fn: (r) => r["_measurement"] == "mesure_meteo")
+            |> filter(fn: (r) => r["station_id"] == "%s")
+            |> pivot(rowKey: ["_time"], columnKey: ["_field"], valueColumn: "_value")
+            |> sort(columns: ["_time"], desc: true)
+            |> limit(n: 1)
+        """, bucket, stationId);
+
+        try {
+            List<FluxTable> tables = client.getQueryApi().query(flux, org);
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+
+                    MesuresDTO mesures = MesuresDTO.builder()
+                            .temperature(getDouble(record, "temperature"))
+                            .humidite(getDouble(record, "humidite"))
+                            .pression(getDouble(record, "pression"))
+                            .vent(getDouble(record, "vent"))
+                            .luminosite(getInt(record, "luminosite"))
+                            .batterie(getInt(record, "batterie"))
+                            .build();
+
+                    return Optional.of(LatestDataResponse.builder()
+                            .station_id(stationId)
+                            .timestamp(record.getTime().toString())
+                            .statut("actif")
+                            .mesures(mesures)
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erreur InfluxDB getDerniereMesure : " + e.getMessage());
+        }
+
+        return Optional.empty();
     }
 
     // =========================================================
@@ -167,6 +219,49 @@ public class InfluxStorageService {
         }
 
         return historique;
+    }
+
+    public List<StationInfoDTO> getStationsActives() {
+        List<StationInfoDTO> stations = new ArrayList<>();
+
+        String flux = String.format("""
+        from(bucket: "%s")
+            |> range(start: -24h)
+            |> filter(fn: (r) => r["_measurement"] == "mesure_meteo")
+            |> filter(fn: (r) => r["_field"] == "temperature")
+            |> group(columns: ["station_id"])
+            |> last()
+        """, bucket);
+
+        try {
+            List<FluxTable> tables = client.getQueryApi().query(flux, org);
+
+            for (FluxTable table : tables) {
+                for (FluxRecord record : table.getRecords()) {
+                    String stationId = (String) record.getValueByKey("station_id");
+                    stations.add(StationInfoDTO.builder()
+                            .station_id(stationId)
+                            .statut("actif")
+                            .derniere_maj(record.getTime().toString())
+                            .build());
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Erreur InfluxDB getStationsActives : " + e.getMessage());
+        }
+
+        return stations;
+    }
+
+    // Évite les NullPointerException lors de la lecture des records
+    private double getDouble(FluxRecord record, String field) {
+        Object value = record.getValueByKey(field);
+        return value != null ? ((Number) value).doubleValue() : 0.0;
+    }
+
+    private int getInt(FluxRecord record, String field) {
+        Object value = record.getValueByKey(field);
+        return value != null ? ((Number) value).intValue() : 0;
     }
 
     // =========================================================

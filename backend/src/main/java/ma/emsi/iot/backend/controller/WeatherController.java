@@ -1,9 +1,12 @@
 package ma.emsi.iot.backend.controller;
 
+import ma.emsi.iot.backend.dto.DashboardResponse;
 import ma.emsi.iot.backend.dto.WeatherPayload;
 import ma.emsi.iot.backend.service.InfluxStorageService;
+import ma.emsi.iot.backend.service.WeatherQueryService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,10 +17,12 @@ import java.util.List;
 public class WeatherController {
 
     private final InfluxStorageService influxStorageService;
+    private final WeatherQueryService weatherQueryService;
 
     // Injection de la vraie base de données par constructeur
-    public WeatherController(InfluxStorageService influxStorageService) {
+    public WeatherController(InfluxStorageService influxStorageService , WeatherQueryService weatherQueryService) {
         this.influxStorageService = influxStorageService;
+        this.weatherQueryService = weatherQueryService;
     }
 
     // http://localhost:8080/api/meteo/historique
@@ -39,5 +44,20 @@ public class WeatherController {
         }
 
         return ResponseEntity.ok(data.get(0)); // On extrait le premier et unique élément de la liste
+    }
+
+    @GetMapping("/{stationId}/latest")
+    public ResponseEntity<DashboardResponse> getDashboardData(@PathVariable String stationId) {
+
+        // 1. On demande à l'orchestrateur de préparer le gros JSON
+        DashboardResponse response = weatherQueryService.getDashboardData(stationId);
+
+        // 2. Si la base est vide ou la station inconnue, on renvoie un statut 204 (No Content)
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
+
+        // 3. Sinon, on renvoie un statut 200 (OK) avec les données
+        return ResponseEntity.ok(response);
     }
 }
