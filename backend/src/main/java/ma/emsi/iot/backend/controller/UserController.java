@@ -1,5 +1,7 @@
 package ma.emsi.iot.backend.controller;
 
+import ma.emsi.iot.backend.dto.CreateUserRequest;
+import ma.emsi.iot.backend.dto.UpdateUserRequest;
 import ma.emsi.iot.backend.entity.User;
 import ma.emsi.iot.backend.service.UserService;
 import org.springframework.http.ResponseEntity;
@@ -28,13 +30,16 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody User user) {
-        return ResponseEntity.ok(userService.createUser(user));
+    public ResponseEntity<User> createUser(
+            @RequestBody CreateUserRequest req) {
+        return ResponseEntity.ok(userService.createUser(req));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<User> updateUser(@PathVariable Long id, @RequestBody User updated) {
-        return ResponseEntity.ok(userService.updateUser(id, updated));
+    public ResponseEntity<User> updateUser(
+            @PathVariable Long id,
+            @RequestBody UpdateUserRequest req) {
+        return ResponseEntity.ok(userService.updateUser(id, req));
     }
 
     @DeleteMapping("/{id}")
