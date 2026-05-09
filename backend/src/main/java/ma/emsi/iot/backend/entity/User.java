@@ -20,7 +20,7 @@ public class User {
     @Column(unique = true, nullable = false)
     private String username;
 
-    @JsonIgnore @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     @Column(nullable = false)
     private String password;        // hashé avec BCrypt
 
