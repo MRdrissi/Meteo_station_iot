@@ -18,7 +18,6 @@ openmeteo = openmeteo_requests.Client(session=cache_session)
 
 #verif coordonnees  https://open-meteo.com/en/docs
 REAL_STATIONS = {
-    "ST-CASABLANCA":  {"lat": 33.57, "lon": -7.58},
     "ST-RABAT":        {"lat": 34.02, "lon": -6.84},
     "ST-MARRAKECH":    {"lat": 31.63, "lon": -8.01},
     "ST-TANGER":       {"lat": 35.77, "lon": -5.81},
@@ -82,7 +81,7 @@ while True:
                 },
                 "system": {"battery_pct": 99}
             }
-            topic = f"emsi/pfa/marwane_mouad/weather/ST-CASABLANCA/data"
+            topic = f"emsi/pfa/marwane_mouad/weather/{station_id}/data"
             client.publish(topic, json.dumps(payload))
             print(f"[{station_id}] -> {payload['sensors']}")
     time.sleep(SEND_INTERVAL)
