@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "author": "marwane drissi",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 19.2, "left": 273.64, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht", "top": -220.5, "left": 292.2, "attrs": {} },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": 60.8, "left": -28, "attrs": {} },
+    { "type": "chip-pressure-sensor", "id": "pot_press", "top": -27.78, "left": 33.6, "attrs": {} },
+    { "type": "chip-wind-sensor", "id": "pot_vent", "top": -66.18, "left": 33.6, "attrs": {} },
+    { "type": "board-bmp180", "id": "bmp1", "top": -205.76, "left": -191.74, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:3V3", "dht:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "dht:GND", "black", [ "v0" ] ],
+    [ "esp:4", "dht:SDA", "green", [ "v0" ] ],
+    [ "esp:3V3", "ldr:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "ldr:GND", "black", [ "v0" ] ],
+    [ "esp:34", "ldr:AO", "green", [ "v0" ] ],
+    [ "esp:3V3", "pot_press:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "pot_press:GND", "black", [ "v0" ] ],
+    [ "esp:35", "pot_press:SIG", "blue", [ "v0" ] ],
+    [ "esp:3V3", "pot_vent:VCC", "red", [ "v0" ] ],
+    [ "esp:GND", "pot_vent:GND", "black", [ "v0" ] ],
+    [ "esp:32", "pot_vent:SIG", "blue", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
