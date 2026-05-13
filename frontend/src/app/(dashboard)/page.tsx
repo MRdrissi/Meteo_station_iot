@@ -62,6 +62,10 @@ export default function DashboardPage() {
     const filtered =
         filter === "ALL" ? stationIds : stationIds.filter((s) => s === filter);
 
+    const filteredPredictionDashboards = filtered
+        .map((stationId) => latestByStation[stationId])
+        .filter((d: any) => d?.predictions);
+
     if (loading) {
         return (
             <div className="flex items-center justify-center h-64">
@@ -226,7 +230,7 @@ export default function DashboardPage() {
 
             {/**/}
             <PredictionsSection
-                dashboards={data.filter((d: any) => d.predictions)}
+                dashboards={filteredPredictionDashboards}
             />
         </div>
     );
@@ -274,9 +278,9 @@ function PredictionsSection({ dashboards }: { dashboards: any[] }) {
     return (
         <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
             <div className="mb-5">
-                <h2 className="text-lg font-semibold text-gray-900">Prédictions Machine Learning</h2>
+                <h2 className="text-lg font-semibold text-gray-900">Prédictions</h2>
                 <p className="text-sm text-gray-500 mt-1">
-                    Prévisions générées par le backend à partir des dernières mesures.
+                    Prévisions générées à partir des dernières mesures.
                 </p>
             </div>
 
