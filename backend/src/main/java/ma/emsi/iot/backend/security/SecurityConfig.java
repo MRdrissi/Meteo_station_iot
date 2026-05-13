@@ -41,7 +41,7 @@ public class SecurityConfig {
                         // LECTURE → USER et ADMIN
                         // ══════════════════════════════════════
                         .requestMatchers(HttpMethod.GET, "/api/stations/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers(HttpMethod.GET, "/api/weather/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/meteo/**").hasAnyRole("USER", "ADMIN")
 
                         // ══════════════════════════════════════
                         // ÉCRITURE → ADMIN uniquement
