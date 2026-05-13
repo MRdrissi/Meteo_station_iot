@@ -6,9 +6,14 @@
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 19.2, "left": 273.64, "attrs": {} },
     { "type": "wokwi-dht22", "id": "dht", "top": -220.5, "left": 292.2, "attrs": {} },
     { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": 60.8, "left": -28, "attrs": {} },
-    { "type": "chip-pressure-sensor", "id": "pot_press", "top": -27.78, "left": 33.6, "attrs": {} },
-    { "type": "chip-wind-sensor", "id": "pot_vent", "top": -66.18, "left": 33.6, "attrs": {} },
-    { "type": "board-bmp180", "id": "bmp1", "top": -205.76, "left": -191.74, "attrs": {} }
+    {
+      "type": "chip-pressure-sensor",
+      "id": "pot_press",
+      "top": -27.78,
+      "left": 33.6,
+      "attrs": {}
+    },
+    { "type": "chip-wind-sensor", "id": "pot_vent", "top": -66.18, "left": 33.6, "attrs": {} }
   ],
   "connections": [
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
