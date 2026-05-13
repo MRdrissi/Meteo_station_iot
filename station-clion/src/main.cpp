@@ -18,8 +18,8 @@ const char* ssid = "Wokwi-GUEST";
 const char* wifi_password = "";
 
 //
-const char* mqtt_server = "5.tcp.eu.ngrok.io";
-const int mqtt_port = 19992;
+const char* mqtt_server = "6.tcp.eu.ngrok.io";
+const int mqtt_port = 10804;
 
 // Compte Mosquitto de publication
 const char* mqtt_user = "simulateur";

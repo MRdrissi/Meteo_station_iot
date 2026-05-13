@@ -1,0 +1,20 @@
+## start the demo script
+
+RUN_WOKWI_CLI=false ./scripts/demo.sh start
+
+## stop the demo script
+
+./scripts/demo.sh stop
+
+## stop also the containers
+
+./scripts/demo.sh down
+
+##
+## start the backend
+
+cd backend && mvn -Dmaven.test.skip=true spring-boot:run
+
+## start the frontend
+
+cd frontend && npm run dev
