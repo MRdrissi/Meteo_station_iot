@@ -2,6 +2,7 @@
 
 import {useEffect, useState} from "react";
 import {weather, stations as stationsApi} from "@/lib/api";
+import PersistentAlerts from "@/components/PersistentAlerts";
 import Link from "next/link";
 import {
     Thermometer,
@@ -76,6 +77,15 @@ export default function DashboardPage() {
 
     return (
         <div>
+            <PersistentAlerts
+                alerts={data.flatMap((d: any) =>
+                    (d.alertes || []).map((a: any) => ({
+                        ...a,
+                        station_id: d.station_id,
+                        timestamp: a.timestamp || d._time,
+                    }))
+                )}
+            />
             {/* En-tête */}
             <div className="flex items-center justify-between mb-8">
                 <div>
@@ -214,12 +224,10 @@ export default function DashboardPage() {
                 </div>
             )}
 
-            {/* Placeholder ML */}
-            <div className="mt-8 bg-white rounded-xl border border-dashed border-gray-300 p-8 text-center">
-                <p className="text-gray-400 text-sm font-medium">
-                    Section prédictions Machine Learning — à intégrer prochainement
-                </p>
-            </div>
+            {/**/}
+            <PredictionsSection
+                dashboards={data.filter((d: any) => d.predictions)}
+            />
         </div>
     );
 }
@@ -250,4 +258,60 @@ function CompactMetric({
             {unit && <p className="text-[10px] text-gray-400 leading-none">{unit}</p>}
         </div>
     );
+}
+
+function PredictionsSection({ dashboards }: { dashboards: any[] }) {
+    if (!dashboards.length) {
+        return (
+            <div className="mt-8 bg-white rounded-xl border border-dashed border-gray-300 p-8 text-center">
+                <p className="text-gray-400 text-sm font-medium">
+                    Aucune prédiction ML disponible pour le moment
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="mt-8 bg-white rounded-xl border border-gray-200 p-6">
+            <div className="mb-5">
+                <h2 className="text-lg font-semibold text-gray-900">Prédictions Machine Learning</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                    Prévisions générées par le backend à partir des dernières mesures.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {dashboards.map((d: any) => (
+                    <div key={d.station_id} className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                        <div className="flex items-center justify-between mb-3">
+                            <h3 className="font-semibold text-gray-900 text-sm">{d.station_id}</h3>
+                            <span className="text-xs text-gray-400">
+                                {d._time ? new Date(d._time).toLocaleString("fr-FR") : ""}
+                            </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                            {Object.entries(d.predictions || {}).map(([key, value]) => (
+                                <div key={key} className="bg-white rounded-lg border border-gray-100 p-3">
+                                    <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
+                                        {formatPredictionKey(key)}
+                                    </p>
+                                    <p className="text-sm font-semibold text-gray-900">
+                                        {String(value)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function formatPredictionKey(key: string) {
+    return key
+        .replaceAll("_", " ")
+        .replaceAll("-", " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
 }

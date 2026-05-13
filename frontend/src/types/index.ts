@@ -34,3 +34,22 @@ export interface AuthResponse {
     username: string;
     role: string;
 }
+
+export interface DashboardResponse {
+    station_id: string;
+    timestamp: string;
+    statut: string;
+    mesures: Record<string, any>;
+    predictions: Record<string, any> | null;
+    alertes: AlerteDTO[];
+}
+
+export interface AlerteDTO {
+    type?: string;
+    niveau?: string;
+    severity?: string;
+    message?: string;
+    description?: string;
+    timestamp?: string;
+    [key: string]: any;
+}

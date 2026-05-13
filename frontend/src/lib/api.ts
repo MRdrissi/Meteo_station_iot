@@ -16,7 +16,7 @@ import {
 const MOCK_AUTH    = false;   // ← connecté au vrai backend
 const MOCK_STATION = false;   // ← connecté au vrai backend
 const MOCK_USER    = false;   // ← connecté au vrai backend
-const MOCK_WEATHER = true;    // ← reste en mock (pas encore d'endpoint)
+const MOCK_WEATHER = false;
 
 const API_BASE =
     typeof window !== "undefined"
@@ -177,18 +177,81 @@ export const users = {
     },
 };
 
-// ═══════════════════════════════════════════════════════
-// WEATHER — reste en mock jusqu'à ce que le collaborateur
-// implémente WeatherController + WeatherService
-// ═══════════════════════════════════════════════════════
+//
 export const weather = {
+    getDashboardByStation: async (stationId: string) => {
+        if (MOCK_WEATHER) {
+            const latest = mockGetLatestWeather().find(
+                (w: any) => w.station_id === stationId
+            );
+
+            return {
+                station_id: stationId,
+                timestamp: latest?._time || new Date().toISOString(),
+                statut: "NORMAL",
+                mesures: latest || {},
+                predictions: null,
+                alertes: [],
+            };
+        }
+
+        return request<any>(`/meteo/${stationId}/latest`);
+    },
+
+    getDashboards: async () => {
+        const allStations = await stations.getAll();
+
+        const results = await Promise.all(
+            allStations.map(async (s: any) => {
+                try {
+                    return await weather.getDashboardByStation(s.stationId);
+                } catch (err) {
+                    console.error(`Erreur météo pour ${s.stationId}`, err);
+                    return null;
+                }
+            })
+        );
+
+        return results.filter(Boolean);
+    },
+
     getLatest: async () => {
-        if (MOCK_WEATHER) return mockGetLatestWeather();
-        return request<any[]>("/weather/latest");
+        const dashboards = await weather.getDashboards();
+
+        return dashboards.map((d: any) => ({
+            _time: d.timestamp,
+            station_id: d.station_id,
+
+            temperature_c: d.mesures?.temperature_c,
+            humidity_pct: d.mesures?.humidity_pct,
+            pressure_hpa: d.mesures?.pressure_hpa,
+            wind_speed_kmh: d.mesures?.wind_speed_kmh,
+            luminosity_lux: d.mesures?.luminosity_lux,
+            battery_pct: d.mesures?.battery_pct,
+
+            predictions: d.predictions,
+            alertes: d.alertes || [],
+            statut: d.statut,
+        }));
     },
 
     getByStation: async (stationId: string, range = "24h") => {
         if (MOCK_WEATHER) return mockGetStationWeather(stationId, range);
-        return request<any[]>(`/weather/station/${stationId}?range=${range}`);
+
+        const historique = await request<any[]>("/meteo/historique");
+
+        return historique
+            .filter((p: any) => p.metadata?.station_id === stationId)
+            .map((p: any) => ({
+                _time: p.metadata?.timestamp,
+                station_id: p.metadata?.station_id,
+
+                temperature_c: p.sensors?.temperature_c,
+                humidity_pct: p.sensors?.humidity_pct,
+                pressure_hpa: p.sensors?.pressure_hpa,
+                wind_speed_kmh: p.sensors?.wind_speed_kmh,
+                luminosity_lux: p.sensors?.luminosity_lux,
+                battery_pct: p.system?.battery_pct,
+            }));
     },
 };
