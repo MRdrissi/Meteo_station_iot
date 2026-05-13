@@ -1,0 +1,10 @@
+{
+  "name": "pressure-sensor",
+  "version": "1.0.0",
+  "author": "Marwane",
+  "pins": [
+    "VCC",
+    "GND",
+    "SIG"
+  ]
+}

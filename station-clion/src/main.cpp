@@ -17,9 +17,9 @@ DHT dht(DHTPIN, DHTTYPE);
 const char* ssid = "Wokwi-GUEST";
 const char* wifi_password = "";
 
-// Avec Wokwi Private IoT Gateway, l'ESP32 simulé peut joindre ta machine locale avec ce host.
-const char* mqtt_server = "host.wokwi.internal";
-const int mqtt_port = 1883;
+//
+const char* mqtt_server = "5.tcp.eu.ngrok.io";
+const int mqtt_port = 19992;
 
 // Compte Mosquitto de publication
 const char* mqtt_user = "simulateur";
