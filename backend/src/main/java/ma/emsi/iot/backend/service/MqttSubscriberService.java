@@ -2,6 +2,7 @@ package ma.emsi.iot.backend.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import ma.emsi.iot.backend.dto.WeatherPayload;
 import ma.emsi.iot.backend.repository.StationRepository;
 import org.eclipse.paho.client.mqttv3.*;
@@ -28,24 +29,38 @@ public class MqttSubscriberService {
     @Value("${mqtt.password}")
     private String password;
 
+    private final WeatherValidationService validationService;
     private final InfluxStorageService influxStorageService;
+    private final AlertEngineService alertEngineService;
+    private final IaPredictionService iaPredictionService;
     private final StationRepository stationRepository;
 
-    public MqttSubscriberService(InfluxStorageService influxStorageService,
-                                 StationRepository stationRepository) {
+    private MqttClient client;
+
+    public MqttSubscriberService(
+            WeatherValidationService validationService,
+            InfluxStorageService influxStorageService,
+            AlertEngineService alertEngineService,
+            IaPredictionService iaPredictionService,
+            StationRepository stationRepository
+    ) {
+        this.validationService = validationService;
         this.influxStorageService = influxStorageService;
+        this.alertEngineService = alertEngineService;
+        this.iaPredictionService = iaPredictionService;
         this.stationRepository = stationRepository;
     }
 
     @PostConstruct
     public void connect() {
         try {
-            MqttClient client = new MqttClient(brokerUrl, clientId);
+            client = new MqttClient(brokerUrl, clientId);
+
             MqttConnectOptions options = new MqttConnectOptions();
             options.setAutomaticReconnect(true);
             options.setCleanSession(true);
 
-            // ─── Authentification broker privé ───
+            // Authentification broker privé local
             options.setUserName(username);
             options.setPassword(password.toCharArray());
 
@@ -54,17 +69,29 @@ public class MqttSubscriberService {
 
             ObjectMapper mapper = new ObjectMapper();
 
-            client.subscribe(topic, (topicReçu, message) -> {
+            client.subscribe(topic, (topicRecu, message) -> {
                 String payload = new String(message.getPayload());
 
                 try {
                     WeatherPayload weatherData = mapper.readValue(payload, WeatherPayload.class);
+
+                    if (!validationService.isPayloadValid(weatherData)) {
+                        System.out.println("Donnée météo ignorée : payload invalide.");
+                        return;
+                    }
+
                     String stationId = weatherData.getMetadata().getStation_id();
 
-                    // 1. Écrire dans InfluxDB (données temps réel)
+                    // 1. Sauvegarde InfluxDB avec la convention du module météo p2
                     influxStorageService.sauvegarder(weatherData);
 
-                    // 2. Mettre à jour lastSeenAt dans PostgreSQL
+                    // 2. Appel IA FastAPI
+                    iaPredictionService.fairePrediction(weatherData);
+
+                    // 3. Analyse alertes
+                    alertEngineService.analyser(weatherData);
+
+                    // 4. Mise à jour PostgreSQL : dernière activité de la station
                     stationRepository.findByStationId(stationId).ifPresent(station -> {
                         station.setLastSeenAt(LocalDateTime.now());
                         stationRepository.save(station);
@@ -80,12 +107,25 @@ public class MqttSubscriberService {
                     System.out.println("Sauvegardé dans InfluxDB / PostgreSQL");
 
                 } catch (Exception e) {
-                    System.err.println("❌ Erreur traitement : " + e.getMessage());
+                    System.err.println("Erreur traitement MQTT : " + e.getMessage());
                 }
             });
 
         } catch (MqttException e) {
             System.err.println("Erreur MQTT : " + e.getMessage());
+        }
+    }
+
+    @PreDestroy
+    public void disconnect() {
+        try {
+            if (client != null && client.isConnected()) {
+                client.disconnect();
+                client.close();
+                System.out.println("Déconnexion MQTT propre réussie.");
+            }
+        } catch (MqttException e) {
+            System.err.println("Erreur lors de la déconnexion MQTT : " + e.getMessage());
         }
     }
 }

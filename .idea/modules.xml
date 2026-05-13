@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/Serveur_Meteo.iml" filepath="$PROJECT_DIR$/.idea/Serveur_Meteo.iml" />
+      <module fileurl="file://$PROJECT_DIR$/ia_service/ia_service.iml" filepath="$PROJECT_DIR$/ia_service/ia_service.iml" />
     </modules>
   </component>
 </project>

@@ -1,0 +1,43 @@
+
+# Node.js dependencies
+node_modules/
+**/node_modules/
+
+# Node.js
+node_modules/
+**/node_modules/
+dist/
+build/
+
+# Java / Maven
+target/
+**/target/
+
+# Cache / local files
+*.log
+*.tmp
+*.cache
+*.sqlite
+*.db
+config/simulateur/.cache.sqlite
+
+# Environment files
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+
+# IDE
+.idea/
+.vscode/
+
+# Next.js
+.next/
+**/.next/
+out/
+.vercel/
+.turbo/
+
+# Local lock/cache files
+*.lck
