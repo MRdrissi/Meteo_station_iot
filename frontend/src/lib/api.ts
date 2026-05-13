@@ -222,12 +222,12 @@ export const weather = {
             _time: d.timestamp,
             station_id: d.station_id,
 
-            temperature_c: d.mesures?.temperature_c,
-            humidity_pct: d.mesures?.humidity_pct,
-            pressure_hpa: d.mesures?.pressure_hpa,
-            wind_speed_kmh: d.mesures?.wind_speed_kmh,
-            luminosity_lux: d.mesures?.luminosity_lux,
-            battery_pct: d.mesures?.battery_pct,
+            temperature_c: d.mesures?.temperature_c ?? d.mesures?.temperature,
+            humidity_pct: d.mesures?.humidity_pct ?? d.mesures?.humidite,
+            pressure_hpa: d.mesures?.pressure_hpa ?? d.mesures?.pression,
+            wind_speed_kmh: d.mesures?.wind_speed_kmh ?? d.mesures?.vent,
+            luminosity_lux: d.mesures?.luminosity_lux ?? d.mesures?.luminosite,
+            battery_pct: d.mesures?.battery_pct ?? d.mesures?.batterie,
 
             predictions: d.predictions,
             alertes: d.alertes || [],

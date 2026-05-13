@@ -28,12 +28,12 @@ public class MqttSubscriberService {
     @Value("${mqtt.password}")
     private String password;
 
-    private final InfluxDBService influxDBService;
+    private final InfluxStorageService influxStorageService;
     private final StationRepository stationRepository;
 
-    public MqttSubscriberService(InfluxDBService influxDBService,
+    public MqttSubscriberService(InfluxStorageService influxStorageService,
                                  StationRepository stationRepository) {
-        this.influxDBService = influxDBService;
+        this.influxStorageService = influxStorageService;
         this.stationRepository = stationRepository;
     }
 
@@ -62,7 +62,7 @@ public class MqttSubscriberService {
                     String stationId = weatherData.getMetadata().getStation_id();
 
                     // 1. Écrire dans InfluxDB (données temps réel)
-                    influxDBService.saveWeatherData(weatherData);
+                    influxStorageService.sauvegarder(weatherData);
 
                     // 2. Mettre à jour lastSeenAt dans PostgreSQL
                     stationRepository.findByStationId(stationId).ifPresent(station -> {

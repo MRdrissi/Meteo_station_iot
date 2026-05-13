@@ -291,14 +291,24 @@ function PredictionsSection({ dashboards }: { dashboards: any[] }) {
                         </div>
 
                         <div className="grid grid-cols-2 gap-3">
-                            {Object.entries(d.predictions || {}).map(([key, value]) => (
-                                <div key={key} className="bg-white rounded-lg border border-gray-100 p-3">
-                                    <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-1">
-                                        {formatPredictionKey(key)}
+                            {Object.entries(d.predictions || {}).map(([horizon, values]) => (
+                                <div key={horizon} className="bg-white rounded-lg border border-gray-100 p-3">
+                                    <p className="text-[11px] uppercase tracking-wide text-gray-400 mb-2">
+                                        {formatPredictionKey(horizon)}
                                     </p>
-                                    <p className="text-sm font-semibold text-gray-900">
-                                        {String(value)}
-                                    </p>
+
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries(values as Record<string, any>).map(([metric, value]) => (
+                                            <div key={metric}>
+                                                <p className="text-[10px] text-gray-400">
+                                                    {formatPredictionKey(metric)}
+                                                </p>
+                                                <p className="text-sm font-semibold text-gray-900">
+                                                    {value === null || value === undefined ? "—" : String(value)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             ))}
                         </div>
