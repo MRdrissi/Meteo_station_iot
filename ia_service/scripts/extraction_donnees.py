@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 # --- Configuration des chemins absolus (Architecture MLOps) ---
-# __file__ pointe vers le script actuel (scripts/0_extraction_donnees.py)
+# __file__ pointe vers le script actuel (scripts/extraction_donnees.py)
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(CURRENT_DIR) # On remonte à ia_service/
 

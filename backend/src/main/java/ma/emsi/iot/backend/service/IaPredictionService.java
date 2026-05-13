@@ -28,7 +28,7 @@ public class IaPredictionService {
             "ST-RABAT",       "STATION_RABAT",
             "ST-MARRAKECH",   "STATION_MARRAKECH",
             "ST-TANGER",      "STATION_TANGER",
-            "ST-FES",         "STATION_IFRAN"
+            "ST-FES",         "STATION_IFRANE"
     );
 
     //  Constructor injection
